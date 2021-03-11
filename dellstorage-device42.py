@@ -5,7 +5,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import json
 import base64
-import ConfigParser
+import configparser
 
 #process Storage Center info from DSM and convert to Device42 Format
 def processStorageCenter(storagecenter):
@@ -108,22 +108,26 @@ def processDisk(disk,enclosureName,diskspeed):
 
 def main():
     #parse the config file
-    config = ConfigParser.ConfigParser()
-    config.readfp(open('dellstorage-device42.cfg'))
+    config = configparser.ConfigParser()
+    # config.readfp(open('dellstorage-device42.cfg'))
+    config.read_file(open('dellstorage-device42.cfg'))
     dellusername = config.get('dell','username')
     dellpassword = config.get('dell','password')
     dellUri = config.get('dell','baseUri')
     d42username = config.get('device42','username')
     d42password = config.get('device42','password')
     device42Uri = config.get('device42','baseUri')
-
-    dsheaders = {'Authorization': 'Basic ' + base64.b64encode(d42username + ':' + d42password), 'Content-Type': 'application/x-www-form-urlencoded'}
+    d42_data_string=d42username + ':' + d42password
+    d42_data_bytes=d42_data_string.encode("utf-8")
+    dsheaders = {'Authorization': 'Basic ' + base64.b64encode(d42_data_bytes).decode(), 'Content-Type': 'application/x-www-form-urlencoded'}
 
     #Start a session with Dell Storage Manager
     s=requests.Session()
     s.headers.update({'Accept': 'application/json', 'Content-Type': 'application/json', 'x-dell-api-version': '3.1'})
     s.verify=False #disable once we get a real cert
-    dellauth = {'Authorization': 'Basic ' + base64.b64encode(dellusername + ':' + dellpassword), 'Content-Type': 'application/json', 'x-dell-api-version': '3.0'}
+    dell_data_string=dellusername + ':' + dellpassword
+    dell_data_bytes=dell_data_string.encode("utf-8")
+    dellauth = {'Authorization': 'Basic ' + base64.b64encode(dell_data_bytes).decode(), 'Content-Type': 'application/json', 'x-dell-api-version': '3.0'}
     r=s.post(dellUri+'/ApiConnection/Login','{}',headers=dellauth)
 
     #Loop through all available Storage Centers and push as much info as possible to Device42
